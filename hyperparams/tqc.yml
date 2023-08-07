@@ -25,8 +25,8 @@ donkey-mountain-track-v0:
   # n_envs: 4
   train_freq: 200
   gradient_steps: 256
-  learning_starts: 5000
+  learning_starts: 500
   use_sde_at_warmup: True
   use_sde: True
   sde_sample_freq: 16
-  policy_kwargs: "dict(log_std_init=-3, net_arch=[256, 256], n_critics=2)"
+  policy_kwargs: "dict(log_std_init=-3, net_arch=[256, 256], n_critics=2, use_expln=True)"
