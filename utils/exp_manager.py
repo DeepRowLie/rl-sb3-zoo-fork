@@ -23,6 +23,7 @@ from sb3_contrib.common.vec_env import AsyncEval
 
 # For using HER with GoalEnv
 from stable_baselines3 import HerReplayBuffer  # noqa: F401
+from stable_baselines3.common.prioritized_replay_buffer import PrioritizedReplayBuffer
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback, EvalCallback
 from stable_baselines3.common.env_util import make_vec_env

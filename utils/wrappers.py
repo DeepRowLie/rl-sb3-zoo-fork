@@ -252,6 +252,7 @@ class HistoryWrapper(gym.Wrapper):
 
         # Overwrite the observation space
         env.observation_space = gym.spaces.Box(low=low, high=high, dtype=wrapped_obs_space.dtype)
+        # env.observation_space = gym.spaces.Box(low=low_obs, high=high_obs, dtype=wrapped_obs_space.dtype)
 
         super().__init__(env)
 
@@ -272,6 +273,7 @@ class HistoryWrapper(gym.Wrapper):
         obs = self.env.reset()
         self.obs_history[..., -obs.shape[-1] :] = obs
         return self._create_obs_from_history()
+        # return self.obs_history
 
     def step(self, action):
         obs, reward, done, info = self.env.step(action)
@@ -283,6 +285,7 @@ class HistoryWrapper(gym.Wrapper):
         self.action_history = np.roll(self.action_history, shift=-action.shape[-1], axis=-1)
         self.action_history[..., -action.shape[-1] :] = action
         return self._create_obs_from_history(), reward, done, info
+        # return self.obs_history, reward, done, info
 
 
 class HistoryWrapperObsDict(gym.Wrapper):

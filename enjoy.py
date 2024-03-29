@@ -4,6 +4,7 @@ import glob
 import importlib
 import os
 import sys
+import time
 
 import numpy as np
 import torch as th
@@ -208,6 +209,7 @@ def main():  # noqa: C901
 
     episode_reward = 0.0
     episode_rewards, episode_lengths = [], []
+    # net_forward_cost = []
     ep_len = 0
     # For HER, monitor success rate
     successes = []
@@ -215,12 +217,15 @@ def main():  # noqa: C901
     episode_start = np.ones((env.num_envs,), dtype=bool)
     try:
         for _ in range(args.n_timesteps):
+            # start_time = time.time()
             action, lstm_states = model.predict(
                 obs,
                 state=lstm_states,
                 episode_start=episode_start,
                 deterministic=deterministic,
             )
+            # end_time = time.time()
+            # net_forward_cost.append(end_time - start_time)
             obs, reward, done, infos = env.step(action)
 
             episode_start = done
@@ -272,6 +277,9 @@ def main():  # noqa: C901
 
     if args.verbose > 0 and len(episode_lengths) > 0:
         print(f"Mean episode length: {np.mean(episode_lengths):.2f} +/- {np.std(episode_lengths):.2f}")
+
+    # if args.verbose > 0 and len(net_forward_cost) > 0:
+    #     print(f"Net forward cost: {np.mean(net_forward_cost)} +/- {np.std(net_forward_cost)}, max:{np.max(net_forward_cost)}, min:{np.min(net_forward_cost)}")
 
     env.close()
 
