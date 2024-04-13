@@ -50,6 +50,10 @@ from utils.callbacks import SaveVecNormalizeCallback, TrialEvalCallback
 from utils.hyperparams_opt import HYPERPARAMS_SAMPLER
 from utils.utils import ALGOS, get_callback_list, get_latest_run_id, get_wrapper_class, linear_schedule
 
+from ray.rllib.utils.replay_buffers.multi_agent_mixin_replay_buffer import (
+    MultiAgentMixInReplayBuffer,
+)
+
 
 class ExperimentManager:
     """

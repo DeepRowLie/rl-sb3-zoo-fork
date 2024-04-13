@@ -13,6 +13,11 @@ per-config: &PER
   train_freq: [1, "episode"]
   gradient_steps: 200
 
+gsde-config: &GSDE
+  use_sde_at_warmup: True
+  use_sde: True
+  sde_sample_freq: 16
+
 Env-config: &defaults
   # Normalize AE (+ the rest)
   normalize: "{'norm_obs': True, 'norm_reward': False}"
@@ -41,28 +46,83 @@ Env-config: &defaults
   gradient_steps: 200
   #  gradient_steps: -1
   learning_starts: 500
-  use_sde_at_warmup: True
-  use_sde: True
-  sde_sample_freq: 16
   policy_kwargs: "dict(log_std_init=-3, net_arch=[256, 256], n_critics=2, use_expln=True)"
+
+Ray-config: &ray-rlllib
+  env_wrapper:
+    - gym.wrappers.time_limit.TimeLimit:
+        max_episode_steps: 10000
+    - ae.wrapper.AutoencoderWrapper:
+        ae_path: "/home/hero/Projects/DRL/donkeycar/scratch/aae-train-donkeycar/ae/logs/mountain-track/ae-32_1709022771_best.pkl"
+  callback:
+    - utils.callbacks.LapTimeCallback
+  policy: 'RNNPolicy'
+  replay_buffer_class: MultiAgentMixInReplayBuffer
+  replay_buffer_kwargs: "dict(
+                             capacity=100000,
+                             storage_unit='sequences',
+                             combine_prob=0.05,
+                             replay_ratio=0.9,
+                             replay_sequence_length=40,
+                             replay_burn_in=20,
+                             replay_sequence_override=True,
+                             replay_zero_init_states=False
+                        )"
+  policy_kwargs: "dict(
+                      log_std_init=-3,
+                      net_arch=[256, 256],
+                      n_critics=2,
+                      use_expln=True,
+                      gru_hidden_size=256,
+                      n_gru_layers=1,
+                      gru_kwargs=None,
+                      enable_critic_gru=True,
+                      share_gru=False,
+                 )"
+  train_freq: [1, "episode"]
 
 ## Custom envs
 donkey-mountain-track-v0:
   <<: *defaults
-  <<: *PER
+#  <<: *PER
+  <<: *ray-rlllib
+  <<: *GSDE
 
 donkey-avc-sparkfun-v0:
   <<: *defaults
-  <<: *PER
+#  <<: *PER
+  <<: *ray-rlllib
   env_wrapper:
     - gym.wrappers.time_limit.TimeLimit:
         max_episode_steps: 10000
     - dalle_pytorch.wrapper.AutoencoderWrapper:
         ae_path: "/home/hero/Projects/github/site-pkgs/DALLE-pytorch/vae.pt"
-    - utils.wrappers.HistoryWrapper:
-        horizon: 2
-  n_timesteps: !!float 5e6
-  buffer_size: !!int 2097152
-  policy_kwargs: "dict(log_std_init=-3, net_arch=[1024, 512, 256, 256], n_critics=2, use_expln=True)"
+  n_timesteps: !!float 8e6
+#  buffer_size: !!int 2097152
+  learning_starts: 2000
+  learning_rate: !!float 8.3e-4
+  batch_size: 512
+  replay_buffer_kwargs: "dict(
+                               capacity=200000,
+                               storage_unit='sequences',
+                               combine_prob=0.2,
+                               replay_ratio=0.3333333,
+                               replay_sequence_length=40,
+                               replay_burn_in=20,
+                               replay_sequence_override=True,
+                               replay_zero_init_states=False
+                          )"
+  policy_kwargs: "dict(
+                        log_std_init=-3,
+                        net_arch=[512, 256, 256],
+                        n_critics=2,
+                        use_expln=True,
+                        gru_hidden_size=256,
+                        n_gru_layers=1,
+                        gru_kwargs=None,
+                        enable_critic_gru=True,
+                        share_gru=False,
+                   )"
+  <<: *GSDE
   # if retrain the pretrained model, otherwise comment the following line
 #  <<: *RE
