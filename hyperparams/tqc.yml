@@ -1,8 +1,4 @@
 ## template
-re-train: &RE
-  learning_starts: !!float 5e5
-  learning_rate: linear_7.3e-5
-
 per-config: &PER
   callback:
     - utils.callbacks.LapTimeCallback
@@ -68,8 +64,9 @@ Ray-config: &ray-rlllib
                              replay_sequence_override=True,
                              replay_zero_init_states=False
                         )"
+  n_steps_td: 5
   policy_kwargs: "dict(
-                      log_std_init=-3,
+                      log_std_init=-2,
                       net_arch=[256, 256],
                       n_critics=2,
                       use_expln=True,
@@ -80,6 +77,8 @@ Ray-config: &ray-rlllib
                       share_gru=False,
                  )"
   train_freq: [1, "episode"]
+  use_trans_bellman: True
+  gamma: 0.999
 
 ## Custom envs
 donkey-mountain-track-v0:
@@ -99,7 +98,7 @@ donkey-avc-sparkfun-v0:
         ae_path: "/home/hero/Projects/github/site-pkgs/DALLE-pytorch/pretrained/spark_fun/vae.pt"
   n_timesteps: !!float 8e6
 #  buffer_size: !!int 2097152
-  learning_starts: 10000
+  learning_starts: 100000
   learning_rate: !!float 7.3e-4
   batch_size: 256
   replay_buffer_kwargs: "dict(
@@ -113,7 +112,7 @@ donkey-avc-sparkfun-v0:
                                replay_zero_init_states=False
                           )"
   policy_kwargs: "dict(
-                        log_std_init=0,
+                        log_std_init=-3,
                         net_arch=[512, 512, 256, 256],
                         n_critics=2,
                         use_expln=True,
@@ -124,5 +123,4 @@ donkey-avc-sparkfun-v0:
                         share_gru=False,
                    )"
   <<: *GSDE
-  # if retrain the pretrained model, otherwise comment the following line
-#  <<: *RE
+# if retrain the pretrained model, otherwise comment the following line
