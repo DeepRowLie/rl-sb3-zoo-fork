@@ -122,5 +122,6 @@ donkey-avc-sparkfun-v0:
                         enable_critic_gru=True,
                         share_gru=False,
                    )"
+  use_trans_bellman: False
   <<: *GSDE
 # if retrain the pretrained model, otherwise comment the following line

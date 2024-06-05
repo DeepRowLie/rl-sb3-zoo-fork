@@ -8,6 +8,7 @@ import time
 
 import numpy as np
 import torch as th
+import matplotlib.pyplot as plt
 import websockets
 import yaml
 from stable_baselines3.common.utils import set_random_seed
@@ -209,14 +210,18 @@ def main():  # noqa: C901
 
     episode_reward = 0.0
     episode_rewards, episode_lengths = [], []
+    # visualize track and real-time speed
+    track_points_eps, track_points, speeds_eps, speeds = [], [], [], []
     # net_forward_cost = []
     ep_len = 0
     # For HER, monitor success rate
     successes = []
-    lstm_states = None
+    lstm_states = th.zeros(1, 1, 256).to("cuda")
     episode_start = np.ones((env.num_envs,), dtype=bool)
     try:
-        for _ in range(args.n_timesteps):
+        # for _ in range(args.n_timesteps):
+        eval_episodes = 10
+        while True:
             # start_time = time.time()
             action, lstm_states = model.predict(
                 obs,
@@ -235,6 +240,8 @@ def main():  # noqa: C901
 
             episode_reward += reward[0]
             ep_len += 1
+            track_points_eps.append(infos[0]['pos'])
+            speeds_eps.append(infos[0]['speed'])
 
             if args.n_envs == 1:
                 # For atari the return reward is not the atari score
@@ -255,6 +262,11 @@ def main():  # noqa: C901
                     episode_reward = 0.0
                     ep_len = 0
 
+                    speeds.append(speeds_eps.copy())
+                    speeds_eps.clear()
+                    track_points.append(track_points_eps.copy())
+                    track_points_eps.clear()
+
                 # Reset also when the goal is achieved when using HER
                 if done and infos[0].get("is_success") is not None:
                     if args.verbose > 1:
@@ -264,8 +276,17 @@ def main():  # noqa: C901
                         successes.append(infos[0].get("is_success", False))
                         episode_reward, ep_len = 0.0, 0
 
+                if done:
+                    eval_episodes -= 1
+                    if eval_episodes == 0:
+                        break
+
     except KeyboardInterrupt:
         print("Cancelled by the user...")
+        speeds.append(speeds_eps.copy())
+        speeds_eps.clear()
+        track_points.append(track_points_eps.copy())
+        track_points_eps.clear()
         pass
 
     if args.verbose > 0 and len(successes) > 0:
@@ -280,6 +301,35 @@ def main():  # noqa: C901
 
     # if args.verbose > 0 and len(net_forward_cost) > 0:
     #     print(f"Net forward cost: {np.mean(net_forward_cost)} +/- {np.std(net_forward_cost)}, max:{np.max(net_forward_cost)}, min:{np.min(net_forward_cost)}")
+
+    if args.verbose > 0 and len(track_points) > 0 and len(speeds) > 0:
+        np.save('/home/hero/Projects/DRL/donkeycar/scratch/results/visualize/policy/P2CR2-TQC/mountain/track.npy', np.array(track_points, dtype=object))
+        np.save('/home/hero/Projects/DRL/donkeycar/scratch/results/visualize/policy/P2CR2-TQC/mountain/speeds.npy', np.array(speeds, dtype=object))
+
+        x = [coord[0] for coord in track_points[0]]
+        y = [coord[1] for coord in track_points[0]]
+        z = [coord[2] for coord in track_points[0]]
+        speed_values = [speed for speed in speeds[0]]
+
+        # 创建第一个图形对象，并绘制 3D 轨迹图
+        fig1 = plt.figure()
+        ax1 = fig1.add_subplot(111, projection='3d')
+        ax1.scatter(x, y, z, c='b', marker='o')
+        ax1.set_xlabel('X Label')
+        ax1.set_ylabel('Y Label')
+        ax1.set_zlabel('Z Label')
+        ax1.set_title('3D Track Points')
+        plt.show()
+
+        # 创建第二个图形对象，并绘制速度平面图
+        fig2 = plt.figure()
+        ax2 = fig2.add_subplot(111)
+        ax2.plot(speed_values, label='Speed', color='r')
+        ax2.set_xlabel('Time Step')
+        ax2.set_ylabel('Speed')
+        ax2.set_title('Speed Over Time')
+        ax2.legend()
+        plt.show()
 
     env.close()
 
