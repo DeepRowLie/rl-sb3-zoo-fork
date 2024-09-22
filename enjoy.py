@@ -216,11 +216,11 @@ def main():  # noqa: C901
     ep_len = 0
     # For HER, monitor success rate
     successes = []
-    lstm_states = th.zeros(1, 1, 256).to("cuda")
+    lstm_states = None
     episode_start = np.ones((env.num_envs,), dtype=bool)
     try:
         # for _ in range(args.n_timesteps):
-        eval_episodes = 10
+        eval_episodes = 100
         while True:
             # start_time = time.time()
             action, lstm_states = model.predict(
